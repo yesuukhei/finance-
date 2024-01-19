@@ -8,6 +8,7 @@ var uiController = (function() {
         addBtn:  '.add__btn'
     }
 
+
   return {
     getInput: function() {
         return {
@@ -21,6 +22,26 @@ var uiController = (function() {
     },
     getDOMstrings: function() {
         return DOMstrigs;
+    },
+
+    addListItem: function(item, type) {
+        var html, list;
+        // Орлого зарлагын элэмэнтийш агуулсан HTML ийг бэлтгэнэ
+        if(type === 'inc') {
+            list = '.income__list';
+
+            html = '<div class="item clearfix" id="income-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        }else {
+            list = '.expenses__list';
+            html = html = '<div class="item clearfix" id="expense-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+        }
+
+        //Тэр html дотроо орлого зарлагын утгуудыг REPLACE ашиглаж өөрчилнө
+        html = html.replace('%id%',item.id);
+        html = html.replace("$$DESCRIPTION$$", item.description );
+        html = html.replace("##value##",item.value);
+        // Бэлтгэсэн HTMl ээ DOM руу хийж өгнө
+        document.querySelector(list).insertAdjacentHTML('beforeend',html);
     }
   };
 })();
@@ -69,6 +90,8 @@ var financeController = (function() {
             }
 
             data.items[type].push(item);
+            
+            return item;
         
         },
 
@@ -88,9 +111,9 @@ var appController = (function(uiController, finController) {
 
     console.log(input);
     // 2. Олж авсан өгөгдлүүдээ санхүүгийн контроллерт дамжуулж тэнд хадгалана.
-    financeController.addItem(input.type, input.description, input.value);
+    var item =  financeController.addItem(input.type, input.description, input.value);
     // 3. Олж авсан өгөгдлүүдээ веб дээрээ тохирох хэсэгт нь хадгалана.
-
+     uiController.addListItem(item, input.type);
     // 4. Төсвийг тооцоолно
 
     // 5. Эцсийн үлдэгдэл, тооцоог дэлгэцэнд хэвлэнэ
