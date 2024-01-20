@@ -7,11 +7,29 @@ var uiController = (function() {
         inputValue: '.add__value',
         addBtn:  '.add__btn',
         incomeList: '.income__list',
-        expenseList: '.expenses__list'
+        expenseList: '.expenses__list',
+        tusuvLabel: '.budget__value',
+        incomeLabel: '.budget__income--value',
+        expenseLabel: '.budget__expenses--value',
+        huviLabel: '.budget__expenses--percentage'
     }
 
 
+    // tusuv: data.tusuv,
+    // huvi: data.huvi,
+    // totalInc: data.totals.inc,
+    // totalExp: data.totals.exp,
   return {
+    tusuviigUzuuleh: function(tusuv){
+        document.querySelector(DOMstrigs.tusuvLabel).textContent = tusuv.tusuv;
+        document.querySelector(DOMstrigs.incomeLabel).textContent = tusuv.totalInc;
+        document.querySelector(DOMstrigs.expenseLabel).textContent = tusuv.totalExp;
+        if(tusuv.huvi === 0)
+        document.querySelector(DOMstrigs.huviLabel).textContent = tusuv.huvi;
+        else document.querySelector(DOMstrigs.huviLabel).textContent = tusuv.huvi + '%';
+
+    },
+
     getInput: function() {
         return {
             type: document.querySelector(DOMstrigs.inputType).value,
@@ -173,7 +191,7 @@ var appController = (function(uiController, finController) {
             // 5. Эцсийн үлдэгдэл
             var tusuv = financeController.tusviigAwah();
             //6. тооцоог дэлгэцэнд хэвлэнэ//
-            console.log(tusuv);
+            uiController.tusuviigUzuuleh(tusuv);
 
         }
 
@@ -197,6 +215,12 @@ var appController = (function(uiController, finController) {
         init: function() {
             console.log('Application started..');
             setupEventListeners();
+            uiController.tusuviigUzuuleh({
+                tusuv: 0,
+                huvi: 0,
+                totalInc: 0,
+                totalExp: 0,
+            });
         }
     }
 
