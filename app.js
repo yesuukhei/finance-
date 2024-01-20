@@ -11,7 +11,8 @@ var uiController = (function() {
         tusuvLabel: '.budget__value',
         incomeLabel: '.budget__income--value',
         expenseLabel: '.budget__expenses--value',
-        huviLabel: '.budget__expenses--percentage'
+        huviLabel: '.budget__expenses--percentage',
+        container: '.container'
     }
 
 
@@ -20,6 +21,11 @@ var uiController = (function() {
     // totalInc: data.totals.inc,
     // totalExp: data.totals.exp,
   return {
+    deleteListItem: function(id){
+        var el = document.getElementById(id);
+        el.parentNode.removeChild(el);
+    },
+    
     tusuviigUzuuleh: function(tusuv){
         document.querySelector(DOMstrigs.tusuvLabel).textContent = tusuv.tusuv;
         document.querySelector(DOMstrigs.incomeLabel).textContent = tusuv.totalInc;
@@ -50,10 +56,10 @@ var uiController = (function() {
         if(type === 'inc') {
             list =  DOMstrigs.incomeList;
 
-            html = '<div class="item clearfix" id="income-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+            html = '<div class="item clearfix" id="inc-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
         }else {
             list = DOMstrigs.expenseList;
-            html = html = '<div class="item clearfix" id="expense-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+            html = html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
         }
 
         //Тэр html дотроо орлого зарлагын утгуудыг REPLACE ашиглаж өөрчилнө
@@ -123,6 +129,18 @@ var financeController = (function() {
     }
 
     return {
+        deleteItem: function(type, id) {
+            var ids = data.items[type].map(function(el){
+                return el.id;
+            });
+
+            var index = ids.indexOf(id);
+
+            if(index !== -1) {
+                data.items[type].splice(index, 1);
+            }
+        },
+
         tusuvTootsoloh: function() {
             calculateTotal('inc');
             calculateTotal('exp');
@@ -209,6 +227,25 @@ var appController = (function(uiController, finController) {
             ctrlAddItem();
         }
     })
+
+    document.querySelector(DOM.container).addEventListener('click',function(event){
+        var id = event.target.parentNode.parentNode.parentNode.parentNode.id;
+
+        if(id){
+            var arr = id.split("-");
+            var type = arr[0];
+            var itemId = parseInt(arr[1]);
+    
+            // 1. Санхүүгийн модулиас  type, id ашиглан устгана
+            financeController.deleteItem(type,itemId);
+            // 2. Дэлгэц дээрээс энэ элэментийг устгана
+            uiController.deleteListItem(id);
+            // 3. Үлдэгдэл тооцоог шинэчилж харуулна
+        }
+        
+    
+    })
+
     }
 
     return {
