@@ -12,24 +12,76 @@ var uiController = (function() {
         incomeLabel: '.budget__income--value',
         expenseLabel: '.budget__expenses--value',
         huviLabel: '.budget__expenses--percentage',
-        container: '.container'
+        container: '.container',
+        itemPercentages: '.item__percentage',
+        budgetOgnoo: '.budget__title--month'
+    }
+
+    var nodeListForeach = function(list, callback) {
+        for(var i=0; i<list.length; i++) {
+            callback(list[i], i);
+        }
+    }
+
+    var formatMoney = function(too ,type) {
+        too = "" + too;
+        var a = too.split("").reverse().join("");
+        var count=1, b='', z;
+        for(var i=0; i<a.length; i++) {
+            b += a[i];
+            if(count % 3 ==0) b += ',';
+            count++;
+        }
+        z = b.split("").reverse().join("");
+        if(z[0] === ',')  z = z.subStr(1, z.length-1);
+
+        if(type === 'inc') z = '+' + z;
+        else z = '-' + z;
+
+        return z;
     }
 
 
-    // tusuv: data.tusuv,
-    // huvi: data.huvi,
-    // totalInc: data.totals.inc,
-    // totalExp: data.totals.exp,
   return {
+    changeType: function() {
+        var fields = document.querySelectorAll(DOMstrigs.inputType + ', ' + DOMstrigs.inputDescription + ', ' + DOMstrigs.inputValue);
+
+        nodeListForeach(fields, function(el) {
+            el.classList.toggle('red-focus');
+        })
+
+        document.querySelector(DOMstrigs.addBtn).classList.toggle('red');
+    },
+
+    setDate: function() {
+        var unuudur = new Date();
+        document.querySelector(DOMstrigs.budgetOgnoo).textContent = unuudur.getFullYear() + " оны " + (unuudur.getMonth()+1)+ "-р сарын ";
+
+    },
+
+    displayItemPercentages: function(allPercentages) {
+        // Зарлагын nodeList nau олох
+        var elements = document.querySelectorAll(DOMstrigs.itemPercentages);
+
+        // Элэмент болгоны хувьд зарлагын хувийг массиваас авч шивж оруулах
+        nodeListForeach(elements, function(el, index){
+            el.textContent = allPercentages[index];
+        });
+
+    },
+
     deleteListItem: function(id){
         var el = document.getElementById(id);
         el.parentNode.removeChild(el);
     },
     
     tusuviigUzuuleh: function(tusuv){
-        document.querySelector(DOMstrigs.tusuvLabel).textContent = tusuv.tusuv;
-        document.querySelector(DOMstrigs.incomeLabel).textContent = tusuv.totalInc;
-        document.querySelector(DOMstrigs.expenseLabel).textContent = tusuv.totalExp;
+        var type;
+        if(tusuv.tusuv > 0) type = 'inc';
+        else type = 'exp';
+        document.querySelector(DOMstrigs.tusuvLabel).textContent = formatMoney(tusuv.tusuv, type);
+        document.querySelector(DOMstrigs.incomeLabel).textContent = formatMoney(tusuv.totalInc, 'inc') ;
+        document.querySelector(DOMstrigs.expenseLabel).textContent =formatMoney( tusuv.totalExp, 'exp');
         if(tusuv.huvi === 0)
         document.querySelector(DOMstrigs.huviLabel).textContent = tusuv.huvi;
         else document.querySelector(DOMstrigs.huviLabel).textContent = tusuv.huvi + '%';
@@ -59,13 +111,13 @@ var uiController = (function() {
             html = '<div class="item clearfix" id="inc-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
         }else {
             list = DOMstrigs.expenseList;
-            html = html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+            html = html = '<div class="item clearfix" id="exp-%id%"><div class="item__description">$$DESCRIPTION$$</div><div class="right clearfix"><div class="item__value">##value##</div> <div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
         }
 
         //Тэр html дотроо орлого зарлагын утгуудыг REPLACE ашиглаж өөрчилнө
         html = html.replace('%id%',item.id);
         html = html.replace("$$DESCRIPTION$$", item.description );
-        html = html.replace("##value##",item.value);
+        html = html.replace("##value##",formatMoney( item.value, type));
         // Бэлтгэсэн HTMl ээ DOM руу хийж өгнө
         document.querySelector(list).insertAdjacentHTML('beforeend',html);
     },
@@ -104,6 +156,16 @@ var financeController = (function() {
         this.id = id;
         this.description = description;
         this.value = value;
+        this.percentage = -1;
+    };
+
+    Expense.prototype.calcPercentage = function(totalIncome) {
+        if(totalIncome > 0 )
+        this.percentage = Math.round((this.value / totalIncome) * 100);
+        else this.percentage = 0;
+    };
+    Expense.prototype.getPercentage = function() {
+        return this.percentage;
     };
 
     var data = {
@@ -127,8 +189,9 @@ var financeController = (function() {
 
         data.totals[type] = sum;
     }
-
+   
     return {
+      
         deleteItem: function(type, id) {
             var ids = data.items[type].map(function(el){
                 return el.id;
@@ -141,6 +204,19 @@ var financeController = (function() {
             }
         },
 
+        calculatePercentages: function() {
+            data.items.exp.forEach(function(el){
+                el.calcPercentage(data.totals.inc);
+            })
+        },
+
+        getPercentages: function() {
+            var allPercentages = data.items.exp.map(function(el) {
+                return el.getPercentage();
+            });
+            return allPercentages;
+        },
+
         tusuvTootsoloh: function() {
             calculateTotal('inc');
             calculateTotal('exp');
@@ -148,7 +224,9 @@ var financeController = (function() {
             data.tusuv = data.totals.inc - data.totals.exp;
 
             //zarlagin huvi
+            if(data.totals.inc > 0)
             data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+            else   data.huvi = 0;
         },
 
         tusviigAwah: function() {
@@ -203,21 +281,30 @@ var appController = (function(uiController, finController) {
             // 3. Олж авсан өгөгдлүүдээ веб дээрээ тохирох хэсэгт нь хадгалана.
             uiController.addListItem(item, input.type);
             uiController.clearField();
-            // 4. Төсвийг тооцоолно
-            financeController.tusuvTootsoloh();
-            financeController.tusuvTootsoloh();
-            // 5. Эцсийн үлдэгдэл
-            var tusuv = financeController.tusviigAwah();
-            //6. тооцоог дэлгэцэнд хэвлэнэ//
-            uiController.tusuviigUzuuleh(tusuv);
+           
+            updateTusuv();
 
         }
-
-    
+    }
+    var updateTusuv = function() {
+         // 4. Төсвийг тооцоолно
+         financeController.tusuvTootsoloh();
+         // 5. Эцсийн үлдэгдэл
+         var tusuv = financeController.tusviigAwah();
+         //6. тооцоог дэлгэцэнд хэвлэнэ//
+         uiController.tusuviigUzuuleh(tusuv);
+         //7. Элэментүүдийн хувийг тооцоолно
+         financeController.calculatePercentages();
+         //8. Элэментүүдийн хувийг хүлээж авна
+          var allPercentages = financeController.getPercentages();
+         //9. Эдгээр хувийг дэлгэцэнд гаргана
+         uiController.displayItemPercentages(allPercentages);
     }
    
     var setupEventListeners = function() {
         var DOM = uiController.getDOMstrings();
+
+    document.querySelector(DOM.inputType).addEventListener('change', uiController.changeType);
 
     document.querySelector(DOM.addBtn).addEventListener('click', function(){
         ctrlAddItem(); });
@@ -241,6 +328,7 @@ var appController = (function(uiController, finController) {
             // 2. Дэлгэц дээрээс энэ элэментийг устгана
             uiController.deleteListItem(id);
             // 3. Үлдэгдэл тооцоог шинэчилж харуулна
+            updateTusuv();
         }
         
     
@@ -252,6 +340,7 @@ var appController = (function(uiController, finController) {
         init: function() {
             console.log('Application started..');
             setupEventListeners();
+            uiController.setDate();
             uiController.tusuviigUzuuleh({
                 tusuv: 0,
                 huvi: 0,
